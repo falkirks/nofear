@@ -247,7 +247,9 @@ NoFear.prototype.getPlay = function(name, callback){
                 if (link.attr("href") != null && link.attr("href").indexOf("page_") !== -1) {
                   var actScene = link.text().split(", ");
                   if (actScene.length === 2) {
-                    actScene[0] = actScene[0].slice(actScene[0].length - 1);
+                    if(actScene[0].indexOf("Act") !== -1) {
+                      actScene[0] = actScene[0].slice(actScene[0].length - 1);
+                    }
                     if (actScene[1].indexOf("Scene") !== -1) {
                       actScene[1] = actScene[1].slice(actScene[1].length - 1);
                     }
@@ -308,8 +310,8 @@ NoFear.prototype.getAvailablePlays = function (callback) {
   }).bind(this));
   return this;
 };
-//(new NoFear()).findQuoteInPlay("a muse of fire", "Henry V", function(er, play){
-//  console.log("CALL");
-//  console.log(play);
-//});
+(new NoFear()).getPlay("shrew", function(er, play){
+  console.log("CALL");
+  console.log(play);
+});
 module.exports = NoFear;
