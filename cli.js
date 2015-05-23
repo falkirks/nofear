@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 var meow = require('meow');
-var nofear = require('./');
+//var nofear = require('./');
 
 var cli = meow({
   help: [

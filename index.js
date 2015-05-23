@@ -1,16 +1,10 @@
 'use strict';
 var merge = require('merge');
 var redis = require("redis");
-var sprintf = require("sprintf-js").sprintf,
-  vsprintf = require("sprintf-js").vsprintf;
+var vsprintf = require("sprintf-js").vsprintf;
 var request = require("request");
 var cheerio = require("cheerio");
-var decode = require('ent/decode');
-var async = require('async');
 var _ = require('underscore');
-var toType = function(obj) {
-  return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase()
-};
 
 var NoFear = function (options) {
     this.options = merge({
@@ -25,7 +19,7 @@ var NoFear = function (options) {
     }, options);
     if(this.options.useRedis){
         this.redisClient = redis.createClient();
-        client.on("error", function (err) {
+        this.redisClient.on("error", function (err) {
             console.log("Error " + err);
         });
         console.log("--- Redis is not yet supported ---");
@@ -41,7 +35,9 @@ NoFear.prototype.getEndpoint = function(name, data, callback){
     else{
       request({uri: vsprintf(this.options.endPoints[name], data)},
         function(error, response, body) {
-          if(error != null) callback("Request error", null);
+          if (error != null) {
+            callback("Request error", null);
+          }
           else {
             var $ = cheerio.load(body);
             callback(null, $);
@@ -52,6 +48,7 @@ NoFear.prototype.getEndpoint = function(name, data, callback){
 };
 NoFear.prototype.find = function(quote, locator, callback){
   //TODO
+  console.log(callback + locator + quote); // For jshint
 };
 NoFear.prototype.findQuoteOnPage = function(quote, play, page, callback){
     this.getPage(play, page, (function(er, lines){
@@ -65,8 +62,12 @@ NoFear.prototype.findQuoteOnPage = function(quote, play, page, callback){
           out.push(lines[i]);
         }
       }
-      if(out.length == 0) callback(true, null);
-      else callback(null, out);
+      if(out.length === 0){
+        callback(true, null);
+      }
+      else{
+        callback(null, out);
+      }
     }).bind(this));
     return this;
 };
@@ -83,15 +84,22 @@ NoFear.prototype.findQuoteInScene = function(quote, play, act, scene, callback){
     }
     var fromTo = play.toc[act][scene];
     var finished = _.after(((fromTo[1]-fromTo[0])/2)+1, (function(){
-      if(out.length > 0) callback(null, out);
-      else callback(true, null);
+      if(out.length > 0){
+        callback(null, out);
+      }
+      else{
+        callback(true, null);
+      }
     }).bind(this));
     var out = [];
+    var func = (function(er, lines){
+      if(lines != null){
+        out = out.concat(lines);
+      }
+      finished();
+    }).bind(this);
     for (var i = parseInt(fromTo[0]); i <= fromTo[1]; i += 2) {
-      this.findQuoteOnPage(quote, play.linkName, i, (function(er, lines){
-        if(lines != null) out = out.concat(lines);
-        finished();
-      }).bind(this));
+      this.findQuoteOnPage(quote, play.linkName, i, func);
     }
   }).bind(this));
   return this;
@@ -111,16 +119,22 @@ NoFear.prototype.findQuoteInAct = function(quote, play, acty, callback){ //FIXME
       }
     }
     var finished = _.after(props, (function(){
-      if(out.length > 0) callback(null, out);
-      else callback(true, null);
+      if(out.length > 0){
+        callback(null, out);
+      }
+      else{
+        callback(true, null);
+      }
     }).bind(this));
+    var func = (function(er, lines){
+      if(lines != null){
+        out = out.concat(lines);
+      }
+      finished();
+    }).bind(this);
     for(var sceneId in act){
       if(act.hasOwnProperty(sceneId)){
-        this.findQuoteInScene(quote, play.linkName, acty, sceneId, (function(er, lines){
-          //console.log("HYYYYY");
-          if(lines != null) out = out.concat(lines);
-          finished();
-        }).bind(this));
+        this.findQuoteInScene(quote, play.linkName, acty, sceneId, func);
       }
     }
   }).bind(this));
@@ -140,15 +154,22 @@ NoFear.prototype.findQuoteInPlay = function(quote, play, callback){
       }
     }
     var finished = _.after(props, (function(){
-      if(out.length > 0) callback(null, out);
-      else callback(true, null);
+      if(out.length > 0){
+        callback(null, out);
+      }
+      else{
+        callback(true, null);
+      }
     }).bind(this));
+    var func = (function(er, lines){
+      if(lines != null){
+        out = out.concat(lines);
+      }
+      finished();
+    }).bind(this);
     for(var actId in play.toc){
       if(play.toc.hasOwnProperty(actId)){
-        this.findQuoteInAct(quote, play.linkName, actId, (function(er, lines){
-          if(lines != null) out = out.concat(lines);
-          finished();
-        }).bind(this));
+        this.findQuoteInAct(quote, play.linkName, actId, func);
       }
     }
   }).bind(this));
@@ -156,13 +177,18 @@ NoFear.prototype.findQuoteInPlay = function(quote, play, callback){
 };
 NoFear.prototype.findQuote = function(quote, callback){
     //TODO
+    console.log(quote + callback); //For jshint
 };
 NoFear.prototype.getPage = function(play, id, callback){
   this.getPlay(play, (function(er, play){ //FIXME this is overkill: only one request is needed
-    if(er != null) callback(true, null);
+    if(er != null){
+      callback(true, null);
+    }
     else{
       this.getEndpoint('page', [play.linkName, id], (function(er, $){
-        if(er != null) callback(true, null);
+        if(er != null){
+          callback(true, null);
+        }
         var items = $("#noFear-comparison tr").get();
         if(items.length > 0) {
           var lines = [];
@@ -193,7 +219,7 @@ NoFear.prototype.getPlay = function(name, callback){
       else{
         for (var key in playList) {
           if (playList.hasOwnProperty(key)) {
-            if(name == playList[key].linkName){
+            if(name === playList[key].linkName){
               play = playList[key];
               playKey = key;
               break;
@@ -208,22 +234,27 @@ NoFear.prototype.getPlay = function(name, callback){
         }
         else {
           this.getEndpoint("toc", [play.linkName], (function (er, $) {
-            if (er != null) callback(true, null);
+            if (er != null){
+              callback(true, null);
+            }
             else {
               var results = $("a").get();
               play.toc = {};
               var previous = null;
+              var id = "";
               for (var i = 0; i < results.length - 1; i++) { // The last link is garbage
                 var link = $(results[i]);
                 if (link.attr("href") != null && link.attr("href").indexOf("page_") !== -1) {
                   var actScene = link.text().split(", ");
-                  if (actScene.length == 2) {
+                  if (actScene.length === 2) {
                     actScene[0] = actScene[0].slice(actScene[0].length - 1);
                     if (actScene[1].indexOf("Scene") !== -1) {
                       actScene[1] = actScene[1].slice(actScene[1].length - 1);
                     }
-                    if (play.toc[actScene[0]] == null) play.toc[actScene[0]] = {};
-                    var id = link.attr("href").slice(link.attr("href").indexOf("_") + 1, -5);
+                    if (play.toc[actScene[0]] == null){
+                      play.toc[actScene[0]] = {};
+                    }
+                    id = link.attr("href").slice(link.attr("href").indexOf("_") + 1, -5);
                     play.toc[actScene[0]][actScene[1]] = [id];
                     if(previous != null){
                       play.toc[previous[0]][previous[1]].push(id-2);
