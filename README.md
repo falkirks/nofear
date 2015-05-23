@@ -2,7 +2,8 @@
 
 > Unofficial CLI/crawler for SparkNotes: No Fear Shakespeare
 
-
+## Warning
+This tool is just 
 
 ## Install
 

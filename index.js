@@ -99,7 +99,7 @@ NoFear.prototype.findQuoteInScene = function(quote, play, act, scene, callback){
       finished();
     }).bind(this);
     for (var i = parseInt(fromTo[0]); i <= fromTo[1]; i += 2) {
-      this.findQuoteOnPage(quote, play.linkName, i, func);
+      this.findQuoteOnPage(quote, play, i, func);
     }
   }).bind(this));
   return this;
@@ -118,6 +118,7 @@ NoFear.prototype.findQuoteInAct = function(quote, play, acty, callback){ //FIXME
         props++;
       }
     }
+
     var finished = _.after(props, (function(){
       if(out.length > 0){
         callback(null, out);
@@ -134,7 +135,7 @@ NoFear.prototype.findQuoteInAct = function(quote, play, acty, callback){ //FIXME
     }).bind(this);
     for(var sceneId in act){
       if(act.hasOwnProperty(sceneId)){
-        this.findQuoteInScene(quote, play.linkName, acty, sceneId, func);
+        this.findQuoteInScene(quote, play, acty, sceneId, func);
       }
     }
   }).bind(this));
@@ -144,7 +145,7 @@ NoFear.prototype.findQuoteInPlay = function(quote, play, callback){
   this.getPlay(play, (function(er, play){
     if(er != null || play.toc == null) {
       callback(true, null);
-      return;
+      return this;
     }
     var out = [];
     var props = 0;
@@ -169,15 +170,41 @@ NoFear.prototype.findQuoteInPlay = function(quote, play, callback){
     }).bind(this);
     for(var actId in play.toc){
       if(play.toc.hasOwnProperty(actId)){
-        this.findQuoteInAct(quote, play.linkName, actId, func);
+        this.findQuoteInAct(quote, play, actId, func);
       }
     }
   }).bind(this));
   return this;
 };
 NoFear.prototype.findQuote = function(quote, callback){
-    //TODO
-    console.log(quote + callback); //For jshint
+    this.getAvailablePlays((function(er, plays){
+      if(er !== null){
+        callback(true, null);
+      }
+      var out = [];
+      var finished = _.after(Object.keys(plays).length, (function(){
+        if(out.length > 0){
+          callback(null, out);
+        }
+        else{
+          callback(true, null);
+        }
+      }).bind(this));
+      var func = (function(er, play){
+        this.findQuoteInPlay(quote, play, (function(er, lines){
+          if(lines != null){
+            out = out.concat(lines);
+          }
+          finished();
+        }).bind(this));
+      }).bind(this);
+      for(var play in plays){
+        if(plays.hasOwnProperty(play)){
+          this.getPlay(play, func);
+        }
+      }
+    }).bind(this));
+
 };
 NoFear.prototype.getPage = function(play, id, callback){
   this.getPlay(play, (function(er, play){ //FIXME this is overkill: only one request is needed
@@ -209,78 +236,83 @@ NoFear.prototype.getPage = function(play, id, callback){
   return this;
 };
 NoFear.prototype.getPlay = function(name, callback){
-    this.getAvailablePlays((function(er, playList){
-      var play = null;
-      var playKey = null;
-      if(playList[name] != null){
-        play = playList[name];
-        playKey = name;
-      }
-      else{
-        for (var key in playList) {
-          if (playList.hasOwnProperty(key)) {
-            if(name === playList[key].linkName){
-              play = playList[key];
-              playKey = key;
-              break;
+    if(name != null && name.toc != null){
+      callback(null, name);
+    }
+    else {
+      this.getAvailablePlays((function (er, playList) {
+        var play = null;
+        var playKey = null;
+        if (playList[name] != null) {
+          play = playList[name];
+          playKey = name;
+        }
+        else {
+          for (var key in playList) {
+            if (playList.hasOwnProperty(key)) {
+              if (name === playList[key].linkName) {
+                play = playList[key];
+                playKey = key;
+                break;
+              }
             }
           }
         }
-      }
 
-      if(play != null){
-        if(play.toc != null){
-          callback(null, play);
-        }
-        else {
-          this.getEndpoint("toc", [play.linkName], (function (er, $) {
-            if (er != null){
-              callback(true, null);
-            }
-            else {
-              var results = $("a").get();
-              play.toc = {};
-              var previous = null;
-              var id = "";
-              for (var i = 0; i < results.length - 1; i++) { // The last link is garbage
-                var link = $(results[i]);
-                if (link.attr("href") != null && link.attr("href").indexOf("page_") !== -1) {
-                  var actScene = link.text().split(", ");
-                  if (actScene.length === 2) {
-                    if(actScene[0].indexOf("Act") !== -1) {
-                      actScene[0] = actScene[0].slice(actScene[0].length - 1);
+        if (play != null) {
+          if (play.toc != null || play.linkName === "sonnets") {
+            callback(null, play);
+          }
+          else {
+            this.getEndpoint("toc", [play.linkName], (function (er, $) {
+              if (er != null) {
+                callback(true, null);
+              }
+              else {
+                var results = $("a").get();
+                play.toc = {};
+                var previous = null;
+                var id = "";
+                for (var i = 0; i < results.length - 1; i++) { // The last link is garbage
+                  var link = $(results[i]);
+                  if (link.attr("href") != null && link.attr("href").indexOf("page_") !== -1) {
+                    var actScene = link.text().split(", ");
+                    if (actScene.length === 2) {
+                      if (actScene[0].indexOf("Act") !== -1) {
+                        actScene[0] = actScene[0].slice(actScene[0].length - 1);
+                      }
+                      if (actScene[1].indexOf("Scene") !== -1) {
+                        actScene[1] = actScene[1].slice(actScene[1].length - 1);
+                      }
+                      if (play.toc[actScene[0]] == null) {
+                        play.toc[actScene[0]] = {};
+                      }
+                      id = link.attr("href").slice(link.attr("href").indexOf("_") + 1, -5);
+                      play.toc[actScene[0]][actScene[1]] = [id];
+                      if (previous != null) {
+                        play.toc[previous[0]][previous[1]].push(id - 2);
+                      }
+                      previous = actScene;
                     }
-                    if (actScene[1].indexOf("Scene") !== -1) {
-                      actScene[1] = actScene[1].slice(actScene[1].length - 1);
-                    }
-                    if (play.toc[actScene[0]] == null){
-                      play.toc[actScene[0]] = {};
-                    }
-                    id = link.attr("href").slice(link.attr("href").indexOf("_") + 1, -5);
-                    play.toc[actScene[0]][actScene[1]] = [id];
-                    if(previous != null){
-                      play.toc[previous[0]][previous[1]].push(id-2);
-                    }
-                    previous = actScene;
                   }
                 }
+                this.getEndpoint('page', [play.linkName, id], (function (er, $) {
+                  var items = $(".dropdownMenu option").get();
+                  play.toc[previous[0]][previous[1]].push($(items[items.length - 2]).attr('value').slice($(items[items.length - 2]).attr("value").indexOf("_") + 1, -5));
+                  play.loaded = true;
+                  this.playList[playKey] = play;
+                  callback(null, play);
+                }).bind(this));
               }
-              this.getEndpoint('page', [play.linkName, id], (function(er, $){
-                var items = $(".dropdownMenu option").get();
-                play.toc[previous[0]][previous[1]].push($(items[items.length-2]).attr('value').slice($(items[items.length-2]).attr("value").indexOf("_") + 1, -5));
-                play.loaded = true;
-                this.playList[playKey] = play;
-                callback(null, play);
-              }).bind(this));
-            }
-          }).bind(this));
+            }).bind(this));
+          }
         }
-      }
-      else{
-        callback(true, null);
-      }
-    }).bind(this));
-  return this;
+        else {
+          callback(true, null);
+        }
+      }).bind(this));
+    }
+    return this;
 };
 
 NoFear.prototype.getAvailablePlays = function (callback) {
@@ -297,21 +329,21 @@ NoFear.prototype.getAvailablePlays = function (callback) {
         var results = $(".entry > p > a").get();
         for(var i = 0; i < results.length - 1; i++){ // The last link is garbage
           var link = $(results[i]);
-          this.playList[link.text()] = {
-            linkName: link.attr("href").slice(0, -1),
-            loaded: false,
-            ensureLoaded: (function(play){
-              this.getPlay(play, function(){});
-            }).bind(this, link.text())
-          };
+          var linkName = link.attr("href").slice(0, -1);
+          if(linkName !== "sonnets") {
+            this.playList[link.text()] = {
+              linkName: linkName,
+              loaded: false,
+              ensureLoaded: (function (play) {
+                this.getPlay(play, function () {
+                });
+              }).bind(this, link.text())
+            };
+          }
         }
       }
       callback(null, this.playList);
   }).bind(this));
   return this;
 };
-(new NoFear()).getPlay("shrew", function(er, play){
-  console.log("CALL");
-  console.log(play);
-});
 module.exports = NoFear;

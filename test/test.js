@@ -20,4 +20,8 @@ describe('nofear node module', function () {
     var nofear = new NoFear();
     nofear.findQuoteInPlay("for a muse", "Henry V", done);
   });
+  it('must be able to search all plays', function (done) {
+    var nofear = new NoFear();
+    nofear.findQuoteInPlay("for a muse", done);
+  });
 });
