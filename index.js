@@ -359,7 +359,4 @@ NoFear.prototype.getAvailablePlays = function (callback) {
   }).bind(this));
   return this;
 };
-(new NoFear()).find("dagger", function(er, result){
-  console.log(result);
-});
 module.exports = NoFear;
