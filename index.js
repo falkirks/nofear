@@ -56,7 +56,7 @@ NoFear.prototype.findQuoteOnPage = function(quote, play, page, callback){
       var out = [];
       for(var i = 0; i < lines.length; i++){
         if(lines[i].original.indexOf(quote) !== -1){
-          out.push(lines[i]);
+          out.push({text: lines[i], play: play, page: page});
         }
       }
       if(out.length === 0){
@@ -280,6 +280,7 @@ NoFear.prototype.getPlay = function(name, callback){
 /**
  * Uses SparkNotes search engine to narrow search area.
  * @param quote
+ * @param callback
  */
 NoFear.prototype.find = function(quote, callback){
   this.getEndpoint('search', [this.searchEncode(quote)], (function(er, $){
