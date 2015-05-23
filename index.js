@@ -13,7 +13,8 @@ var NoFear = function (options) {
             playList: "http://nfs.sparknotes.com",
             toc: "http://nfs.sparknotes.com/%s/",
             characters: "http://nfs.sparknotes.com/%s/characters.html",
-            page: "http://nfs.sparknotes.com/%s/page_%u.html"
+            page: "http://nfs.sparknotes.com/%s/page_%u.html",
+            search: "http://www.sparknotes.com/search?q=%s&site=NoFear"
         },
         debug: false
     }, options);
@@ -46,10 +47,6 @@ NoFear.prototype.getEndpoint = function(name, data, callback){
     }
   return this;
 };
-NoFear.prototype.find = function(quote, locator, callback){
-  //TODO
-  console.log(callback + locator + quote); // For jshint
-};
 NoFear.prototype.findQuoteOnPage = function(quote, play, page, callback){
     this.getPage(play, page, (function(er, lines){
       if(er != null){
@@ -70,11 +67,6 @@ NoFear.prototype.findQuoteOnPage = function(quote, play, page, callback){
       }
     }).bind(this));
     return this;
-};
-NoFear.prototype.nextScene = function(playObject, act, scene){ //FIXME
-  if(scene < playObject[act].length){
-    return [act, scene++];
-  }
 };
 NoFear.prototype.findQuoteInScene = function(quote, play, act, scene, callback){
   this.getPlay(play, (function(er, play) {
@@ -175,36 +167,6 @@ NoFear.prototype.findQuoteInPlay = function(quote, play, callback){
     }
   }).bind(this));
   return this;
-};
-NoFear.prototype.findQuote = function(quote, callback){
-    this.getAvailablePlays((function(er, plays){
-      if(er !== null){
-        callback(true, null);
-      }
-      var out = [];
-      var finished = _.after(Object.keys(plays).length, (function(){
-        if(out.length > 0){
-          callback(null, out);
-        }
-        else{
-          callback(true, null);
-        }
-      }).bind(this));
-      var func = (function(er, play){
-        this.findQuoteInPlay(quote, play, (function(er, lines){
-          if(lines != null){
-            out = out.concat(lines);
-          }
-          finished();
-        }).bind(this));
-      }).bind(this);
-      for(var play in plays){
-        if(plays.hasOwnProperty(play)){
-          this.getPlay(play, func);
-        }
-      }
-    }).bind(this));
-
 };
 NoFear.prototype.getPage = function(play, id, callback){
   this.getPlay(play, (function(er, play){ //FIXME this is overkill: only one request is needed
@@ -315,6 +277,56 @@ NoFear.prototype.getPlay = function(name, callback){
     return this;
 };
 
+/**
+ * Uses SparkNotes search engine to narrow search area.
+ * @param quote
+ */
+NoFear.prototype.find = function(quote, callback){
+  this.getEndpoint('search', [this.searchEncode(quote)], (function(er, $){
+    if(er != null){
+      callback(true, null);
+    }
+    else{
+      var results = $('.search-result').get();
+      var pages = [];
+      for(var i = 0; i < results.length; i++){
+        var link = $(results[i]).find('a').attr('href');
+        var data = /http:\/\/nfs.sparknotes.com\/(.*)\/page_(.*).html/.exec(link);
+        if(data !== null){
+          pages.push([data[1], data[2]]);
+        }
+      }
+      var out = [];
+      var finished = _.after(pages.length, (function(){
+        if(out.length > 0){
+          callback(null, out);
+        }
+        else{
+          callback(true, null);
+        }
+      }).bind(this));
+      var func = (function(er, lines){
+        if(lines != null){
+          out = out.concat(lines);
+        }
+        finished();
+      }).bind(this);
+      for (var j = 0; j < pages.length; j++) {
+        this.findQuoteOnPage(quote, pages[j][0], pages[j][1], func);
+      }
+    }
+  }).bind(this));
+  return this;
+};
+/**
+ * INTERNAL USE ONLY
+ * @param string
+ * @returns {string}
+ */
+NoFear.prototype.searchEncode = function(string){
+  string = string.replace(/ /g, '+');
+  return encodeURIComponent(string);
+};
 NoFear.prototype.getAvailablePlays = function (callback) {
   if(this.playList != null){
     callback(null, this.playList);
@@ -346,4 +358,7 @@ NoFear.prototype.getAvailablePlays = function (callback) {
   }).bind(this));
   return this;
 };
+(new NoFear()).find("dagger", function(er, result){
+  console.log(result);
+});
 module.exports = NoFear;
