@@ -32,10 +32,6 @@ $ npm i -g nofear
 $ nofear --help
 ```
 
-#### LokiJS/Mongo quote store
-This store can be arbitrarily large and serves as a cache for all quotes which have been loaded. This allows for the bypass of the NFS site entirely. If you are running a one-off instance this store can be suppressed.
-
-
 ## License
 
 MIT © [Falkirks](falkirks.com)
