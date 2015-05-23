@@ -13,7 +13,7 @@ var cli = meow({
     '--at     Use a locator tag to find data. More details by running `nofear --locator`',
     '--debug  Enable verbose debugging output',
     '--toes   Experimental: Run in toes mode (rate-limited access and caching)',
-    '--list   List all available plays'
+    '--list   List all available plays',
     '',
     'Example',
     '  nofear Unicorn'
