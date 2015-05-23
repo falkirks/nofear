@@ -197,6 +197,12 @@ NoFear.prototype.getPage = function(play, id, callback){
   }).bind(this));
   return this;
 };
+/**
+ * WARNING: This function has been known to break.
+ * @param name
+ * @param callback
+ * @returns {NoFear}
+ */
 NoFear.prototype.getPlay = function(name, callback){
     if(name != null && name.toc != null){
       callback(null, name);
