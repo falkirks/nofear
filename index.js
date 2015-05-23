@@ -71,7 +71,7 @@ NoFear.prototype.findQuoteOnPage = function(quote, play, page, callback){
     }).bind(this));
     return this;
 };
-NoFear.prototype.nextScene = function(playObject, act, scene){
+NoFear.prototype.nextScene = function(playObject, act, scene){ //FIXME
   if(scene < playObject[act].length){
     return [act, scene++];
   }

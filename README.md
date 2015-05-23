@@ -14,7 +14,7 @@ $ npm install --save nofear
 ## CLI usage
 ```sh
 $ nofear "To be or not to be" # Searches all plays
-$ nofear "To be or not to be" --play=Hamlet # Searches Hamlet
+$ nofear "To be or not to be" --play="Hamlet" # Searches Hamlet
 $ nofear "To be or not to be" --play=Hamlet --act=3 # Searches ACT 3 of Hamlet
 $ nofear "To be or not to be" --play=Hamlet --act=3 --scene=1 # Searches ACT 3, Scene 1
 ```
