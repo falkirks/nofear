@@ -133,6 +133,13 @@ NoFear.prototype.findQuoteInAct = function(quote, play, acty, callback){ //FIXME
   }).bind(this));
   return this;
 };
+/**
+ * WARNING: This function has been known to break.
+ * @param quote
+ * @param play
+ * @param callback
+ * @returns {NoFear}
+ */
 NoFear.prototype.findQuoteInPlay = function(quote, play, callback){
   this.getPlay(play, (function(er, play){
     if(er != null || play.toc == null) {
@@ -198,7 +205,6 @@ NoFear.prototype.getPage = function(play, id, callback){
   return this;
 };
 /**
- * WARNING: This function has been known to break.
  * @param name
  * @param callback
  * @returns {NoFear}

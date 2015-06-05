@@ -20,13 +20,15 @@
   "dependencies": {
     "async": "^1.0.0",
     "cheerio": "^0.19.0",
+    "cli-table": "^0.3.1",
     "ent": "^2.2.0",
     "meow": "^3.1.0",
     "merge": "^1.2.0",
     "redis": "^0.12.1",
     "request": "^2.55.0",
     "sprintf-js": "^1.0.2",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "wordwrap": "^1.0.0"
   },
   "devDependencies": {
     "grunt-cli": "^0.1.13",
