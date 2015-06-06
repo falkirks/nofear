@@ -28,8 +28,8 @@ if(cli.flags.list != null){
     }
     else {
       var table = new Table({
-        head: ['Name']
-        , colWidths: [35]
+        head: ['Name'],
+        colWidths: [35]
       });
       for(var key in data){
         if(data.hasOwnProperty(key)){
@@ -53,8 +53,8 @@ else{
             }
             else{
               var table = new Table({
-                head: ['Original', 'Modern']
-                , colWidths: [50, 50]
+                head: ['Original', 'Modern'], 
+                colWidths: [50, 50]
               });
               for(var i = 0; i < data.length; i++){
                 table.push([wrap(data[i].text.original), wrap(data[i].text.modern)]);
@@ -70,8 +70,8 @@ else{
             }
             else{
               var table = new Table({
-                head: ['Original', 'Modern']
-                , colWidths: [50, 50]
+                head: ['Original', 'Modern'],
+                colWidths: [50, 50]
               });
               for(var i = 0; i < data.length; i++){
                 table.push([wrap(data[i].text.original), wrap(data[i].text.modern)]);
@@ -89,8 +89,8 @@ else{
           }
           else{
             var table = new Table({
-              head: ['Original', 'Modern']
-              , colWidths: [50, 50]
+              head: ['Original', 'Modern'], 
+              colWidths: [50, 50]
             });
             for(var i = 0; i < data.length; i++){
               table.push([wrap(data[i].text.original), wrap(data[i].text.modern)]);
@@ -107,8 +107,8 @@ else{
         }
         else{
           var table = new Table({
-            head: ['Original', 'Modern']
-            , colWidths: [50, 50]
+            head: ['Original', 'Modern'], 
+            colWidths: [50, 50]
           });
           for(var i = 0; i < data.length; i++){
             table.push([wrap(data[i].text.original), wrap(data[i].text.modern)]);
